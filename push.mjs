@@ -63,13 +63,35 @@ async function getJSON(url) {
 }
 const inDE = p => p.lat > 47.2 && p.lat < 55.1 && p.lon > 5.8 && p.lon < 15.1;
 const forecast = p => getJSON('https://api.open-meteo.com/v1/forecast?' + new URLSearchParams({ latitude: p.lat, longitude: p.lon, timezone: TZ, forecast_days: '2',
-  hourly: 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_gusts_10m,dew_point_2m', minutely_15: 'precipitation', forecast_minutely_15: '8', past_minutely_15: '0' }));
+  hourly: 'temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_gusts_10m,dew_point_2m,pressure_msl', minutely_15: 'precipitation', forecast_minutely_15: '8', past_minutely_15: '0' }));
 const alerts = p => getJSON(`https://api.brightsky.dev/alerts?lat=${p.lat}&lon=${p.lon}&tz=${TZ}`);
 const SEV = { minor: 1, moderate: 2, severe: 3, extreme: 4 };
 const fmtT = iso => { const d = new Date(iso); return new Intl.DateTimeFormat('de-DE', { timeZone: TZ, weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(d) + ' Uhr'; };
 
 /* ---------- Inhalte ---------- */
-function morningText(f, name) {
+// Biowetter: starke Luftdruck-Änderung (12 Std.), Temperatursprung zum Folgetag, Tiefdruck – wie in der App
+const BIO = { kopf: 'Kopfschmerzen', kreis: 'Kreislauf', gelenk: 'Gelenke', schlaf: 'Schlaf', laune: 'Stimmung' };
+export function bioLine(f, bio) {
+  const H = f.hourly, P = H.pressure_msl, L = local(), ni = Math.max(0, H.time.findIndex(t => t.slice(0, 13) === `${L.date}T${String(L.h).padStart(2, '0')}`));
+  let pts = 0, best = 0; const eff = new Set(), why = [];
+  if (P && P[ni] != null) {
+    const from = Math.max(0, ni - 12), to = Math.min(H.time.length - 1, ni + 24);
+    for (let i = from; i <= to; i++) for (let j = i + 1; j <= Math.min(to, i + 12); j++) if (P[i] != null && P[j] != null && Math.abs(P[j] - P[i]) > Math.abs(best)) best = P[j] - P[i];
+    const ab = Math.abs(best);
+    if (ab >= 8) pts += 2; else if (ab >= 4) pts += 1;
+    if (ab >= 4) { why.push(`Luftdruck ${best < 0 ? '−' : '+'}${r0(ab)} hPa`); ['kopf', 'kreis', 'schlaf'].forEach(x => eff.add(x)); if (best < 0) eff.add('gelenk'); }
+    if (P[ni] < 1000) { pts += 1; why.push('Tiefdruck'); ['kopf', 'gelenk', 'laune'].forEach(x => eff.add(x)); }
+  }
+  const days = [...new Set(H.time.map(t => t.slice(0, 10)))];
+  if (days.length > 1) { const mx = d => Math.max(...H.time.map((t, i) => t.startsWith(d) ? H.temperature_2m[i] : -99)); const dt = mx(days[1]) - mx(days[0]);
+    if (Math.abs(dt) >= 6) pts += 2; else if (Math.abs(dt) >= 4) pts += 1;
+    if (Math.abs(dt) >= 4) { why.push(`morgen ${dt > 0 ? '+' : '−'}${r0(Math.abs(dt))} °C`); eff.add('kreis'); eff.add('kopf'); } }
+  const lvl = pts >= 2 ? 2 : pts >= 1 ? 1 : 0, on = bio && bio.on;
+  if (lvl === 0 || (!on && lvl < 2)) return '';
+  const mine = on ? (bio.s || []).filter(k => eff.has(k)).map(k => BIO[k]) : [];
+  return `${lvl === 2 ? '⚡ Starker Wetterumschwung' : '⚡ Wetter schlägt um'} (${why.join(', ')})${mine.length ? ' – achte auf ' + mine.join(' & ') : ''}`;
+}
+function morningText(f, name, bio) {
   // Vor 14 Uhr: Überblick für heute (ab jetzt); ab 14 Uhr: Überblick für morgen
   const L = local(), tomorrow = L.h >= 14;
   const day = tomorrow ? f.hourly.time.find(t => t.slice(0, 10) > L.date)?.slice(0, 10) : L.date;
@@ -92,7 +114,8 @@ function morningText(f, name) {
   const take = []; if (rains.some(r => r.p >= 50 && kindOf(H.weather_code[r.s], H.temperature_2m[r.s]).w === 'Regen')) take.push('Schirm');
   if (rains.some(r => r.p >= 50 && kindOf(H.weather_code[r.s], H.temperature_2m[r.s]).w !== 'Regen')) take.push('feste Schuhe'); if (ice) take.push('Eiskratzer');
   const g = L.h < 11 ? 'Guten Morgen' : L.h < 17 ? 'Hallo' : L.h < 22 ? 'Guten Abend' : 'Hallo';
-  return { title: `${g}${name ? ', ' + name : ''}${tomorrow ? ' – so wird morgen' : ''}`, body: parts.join(' · ') + `. Anziehen: ${wear}${take.length ? ', mitnehmen: ' + take.join(' & ') : ''}.` };
+  const bl = bioLine(f, bio);
+  return { title: `${g}${name ? ', ' + name : ''}${tomorrow ? ' – so wird morgen' : ''}`, body: parts.join(' · ') + `. Anziehen: ${wear}${take.length ? ', mitnehmen: ' + take.join(' & ') : ''}.` + (bl ? ' ' + bl + '.' : '') };
 }
 // Art des Niederschlags aus Wettercode (und Temperatur als Rückfallebene)
 export function kindOf(code, t) {
@@ -159,7 +182,7 @@ export async function main() {
       const [mh, mm] = String(prefs.mt || '06:00').split(':').map(Number), target = mh * 60 + mm, nowMin = L.h * 60 + L.m;
       if (prefs.morning && nowMin >= target && nowMin < target + 50 && places[0] && st.sent['morning'] !== L.date) {
         const p = places[0], key = p.lat.toFixed(2) + ',' + p.lon.toFixed(2), f = cacheF[key] ||= await forecast(p);
-        const m = morningText(f, s.name); if (m) { await send(s.sub, { ...m, body: `${p.n}: ${m.body}`, tag: 'morning', view: 'wetter' }); st.sent['morning'] = L.date; }
+        const m = morningText(f, s.name, s.bio); if (m) { await send(s.sub, { ...m, body: `${p.n}: ${m.body}`, tag: 'morning', view: 'wetter' }); st.sent['morning'] = L.date; }
       }
     } catch (e) { log('  Fehler:', e.message); }
     // Alte Einträge aufräumen (älter als 3 Tage)

@@ -392,6 +392,17 @@ body.th-photo .bgpanel{background:#fff}
 .chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 14px}
 .chips button{padding:9px 14px;border-radius:20px;background:var(--steel);border:1px solid var(--line);font-family:var(--cond);font-weight:700;font-size:16px;letter-spacing:.03em}
 .chips button:active,.chips button.on{background:var(--orange);border-color:var(--orange)}
+.bio{padding:14px}
+.bio .bh{display:flex;align-items:center;gap:12px}
+.bio .lv{flex:none;font-family:var(--cond);font-weight:800;font-size:15px;letter-spacing:.04em;padding:6px 10px;border-radius:10px;color:#fff;text-transform:uppercase}
+.bio .lv.l0{background:#5fbf5f}.bio .lv.l1{background:#ff9a2e}.bio .lv.l2{background:#e5412d}
+.bio .bt{font-weight:700;font-size:17px;line-height:1.25}
+.bio ul{margin:10px 0 0;padding-left:18px;font-size:14px;line-height:1.45}
+.bio .spark{width:100%;height:64px;display:block;margin-top:10px}
+.bio .sx{display:flex;justify-content:space-between;font-size:11px;color:var(--grey);margin-top:2px}
+.bio .eff{margin-top:10px;font-size:14px;line-height:1.45}
+.bio .eff b.me{color:var(--orange)}
+.bio .tip{margin-top:8px;font-size:13px;color:var(--grey);line-height:1.4}
 @media (max-width:380px){.temp{font-size:84px}.hicon{width:96px;height:96px}.seg button{font-size:15px}.d{grid-template-columns:56px 28px 34px minmax(0,1fr);gap:6px}.d .n{font-size:17px}.tile .val{font-size:28px}.ur{font-size:17px}}
 </style>
 </head>
@@ -460,6 +471,14 @@ body.th-photo .bgpanel{background:#fff}
       <div class="set" style="padding-top:0"><div><small style="margin:0">Ausprobieren (10 Sekunden):</small></div></div>
       <div class="chips" id="fxTry"><button data-fx="rain">Regen</button><button data-fx="snow">Schnee</button><button data-fx="thunder">Gewitter</button><button data-fx="wind">Wind</button><button data-fx="fog">Nebel</button><button data-fx="ice">Glätte</button></div>
     </div>
+    <h2>Wetterfühligkeit</h2>
+    <div class="card" id="bioBox">
+      <div class="set"><div>Ich reagiere auf Wetterwechsel<small>Dann hebt die Karte „Biowetter“ hervor, was dich betrifft, und der Morgen-Hinweis per Push nennt es bei Wetterumschwung. Danach Push-Code neu kopieren.</small></div><button class="sw" id="swBio" role="switch" aria-label="Ich reagiere auf Wetterwechsel"></button></div>
+      <div id="bioMore">
+        <div class="set" style="padding-top:0"><div><small style="margin:0">Was merkst du bei Wetterwechsel? (mehrere möglich)</small></div></div>
+        <div class="chips" id="bioChips"><button data-b="kopf">Kopfschmerzen</button><button data-b="kreis">Kreislauf</button><button data-b="gelenk">Gelenke / Narben</button><button data-b="schlaf">Schlaf / Müdigkeit</button><button data-b="laune">Stimmung</button></div>
+      </div>
+    </div>
     <h2>Push-Nachrichten</h2>
     <div class="card" id="pushBox">
       <div class="set"><div>Push-Nachrichten<small id="pushHint">Warnungen und Hinweise aufs iPhone und die Apple Watch – auch wenn die App geschlossen ist.</small></div><button class="sw" id="swPush" role="switch" aria-label="Push-Nachrichten"></button></div>
@@ -467,7 +486,7 @@ body.th-photo .bgpanel{background:#fff}
         <div class="sep"></div>
         <div class="set"><div>Amtliche Warnungen<span class="ast">*</span><small>DWD-Warnungen für deine Orte. Nachts (22–6 Uhr) nur Unwetter.</small></div><button class="sw" data-pp="warn" role="switch" aria-label="Amtliche Warnungen"></button></div>
         <div class="set"><div>Niederschlag in der nächsten Stunde<span class="ast">*</span><small>Regen, Schnee, Schneeregen – für den ersten Ort, 6–22 Uhr, höchstens alle 3 Std.</small></div><button class="sw" data-pp="rain" role="switch" aria-label="Niederschlag"></button></div>
-        <div class="set"><div>Morgen-Hinweis<span class="ast">*</span><small>Temperatur, Niederschlag, Glätte und was du anziehen solltest.</small></div><button class="sw" data-pp="morning" role="switch" aria-label="Morgen-Hinweis"></button></div>
+        <div class="set"><div>Morgen-Hinweis<span class="ast">*</span><small>Temperatur, Niederschlag, Glätte, was du anziehen solltest – und bei Wetterumschwung ein Biowetter-Hinweis.</small></div><button class="sw" data-pp="morning" role="switch" aria-label="Morgen-Hinweis"></button></div>
         <div class="set" id="mtRow" style="padding-top:0"><div>Uhrzeit<span class="ast">*</span><small>In 15-Minuten-Schritten; kann ein paar Minuten später ankommen.</small></div><select id="mtSel" class="mtsel" aria-label="Uhrzeit Morgen-Hinweis"></select></div>
         <div class="sep"></div>
         <div style="padding:14px">
@@ -475,7 +494,7 @@ body.th-photo .bgpanel{background:#fff}
           <small class="pcinfo" id="pushCodeInfo">Diesen Code einmal in GitHub eintragen (Anleitung im Chat). Ändern sich Orte oder Schalter, Code neu kopieren.</small>
           <textarea id="pushCode" readonly rows="3"></textarea>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="pushCopy" style="margin:0">Code kopieren</button><button class="btn ghost" id="pushTest" style="margin:0">Probe-Nachricht</button></div>
-          <div class="pnote"><b><span class="ast">*</span> Nicht vergessen:</b> Änderungen an Uhrzeit, Schaltern, Orten oder Namen gelten erst, wenn du den Code neu kopierst und in GitHub ersetzt – bei <b>PUSH_1</b> (Danny) bzw. <b>PUSH_2</b> (Sabine), Stift ✏️ → einsetzen → „Update secret“.<br>Der Hauptschalter oben wirkt dagegen sofort. Wird er wieder eingeschaltet, entsteht ein neuer Code – den einmal in GitHub ersetzen.</div>
+          <div class="pnote"><b><span class="ast">*</span> Nicht vergessen:</b> Änderungen an Uhrzeit, Schaltern, Orten, Namen oder Wetterfühligkeit gelten erst, wenn du den Code neu kopierst und in GitHub ersetzt – bei <b>PUSH_1</b> (Danny) bzw. <b>PUSH_2</b> (Sabine), Stift ✏️ → einsetzen → „Update secret“.<br>Der Hauptschalter oben wirkt dagegen sofort. Wird er wieder eingeschaltet, entsteht ein neuer Code – den einmal in GitHub ersetzen.</div>
         </div>
       </div>
     </div>
@@ -516,7 +535,7 @@ body.th-photo .bgpanel{background:#fff}
 
 <script>
 'use strict';
-const VERSION = '2.0.3';
+const VERSION = '2.2';
 const DEMO_MODE = false; // nur für die Vorschau im Chat auf true
 const $ = s => document.querySelector(s);
 const LS = {
@@ -527,6 +546,7 @@ const LS = {
 const ERFURT = {id:'50.978_11.033', name:'Erfurt', region:'Thüringen', lat:50.9787, lon:11.0328};
 const S = {
   favs: LS.get('favs', [ERFURT]),
+  bio: LS.get('bio', {on:false, s:[]}),
   startLast: LS.get('startLast', true),
   gps: LS.get('gps', null),          // {lat,lon,name,region,t} – nur wenn freigegeben
   gpsOn: LS.get('gpsOn', false),
@@ -602,7 +622,7 @@ async function getJSON(url, ms=12000){
 function fcURL(p){
   return 'https://api.open-meteo.com/v1/forecast?'+new URLSearchParams({latitude:p.lat.toFixed(4),longitude:p.lon.toFixed(4),timezone:'auto',forecast_days:'16',
     current:'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
-    hourly:'temperature_2m,apparent_temperature,dew_point_2m,precipitation_probability,precipitation,weather_code,is_day,wind_speed_10m,wind_gusts_10m',
+    hourly:'temperature_2m,apparent_temperature,dew_point_2m,precipitation_probability,precipitation,weather_code,is_day,wind_speed_10m,wind_gusts_10m,pressure_msl',
     minutely_15:'precipitation', forecast_minutely_15:'12', past_minutely_15:'1',
     daily:'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max'});
 }
@@ -841,6 +861,7 @@ function renderExtra(){
   const dl=(new Date(D.sunset[0])-new Date(D.sunrise[0]))/60000;
   const arrow=`<svg class="compass" viewBox="0 0 24 24" style="transform:rotate(${(c.wind_direction_10m+180)%360}deg)"><circle cx="12" cy="12" r="11" fill="none" stroke="${pal().line}" stroke-width="1.5"/><path d="M12 4l4 12-4-2.5L8 16z" fill="#ff6a00"/></svg>`;
   $('#extra').innerHTML=`${outfit(d, iceRisk(d))}
+  ${bioCard(d)}
   <h2>Tour-Check · 6 Std.</h2>
   <div class="card tour"><div class="light" style="background:${T[0]}">${T[2]}</div><div><div class="tt">${T[1]}</div><div class="td">E-Bike, Camping, Ausflug: ${why.join(' · ')}</div></div></div>
   <h2>Details heute</h2>
@@ -910,6 +931,9 @@ function renderOrte(noFetch){
   $('#swLast').classList.toggle('on', S.startLast); $('#swLast').setAttribute('aria-checked', S.startLast);
   if(document.activeElement!==$('#nameFld')) $('#nameFld').value=S.name;
   $('#swFx').classList.toggle('on', S.fx); $('#swFx').setAttribute('aria-checked', S.fx);
+  $('#swBio').classList.toggle('on', S.bio.on); $('#swBio').setAttribute('aria-checked', S.bio.on);
+  $('#bioMore').style.display=S.bio.on?'':'none';
+  document.querySelectorAll('#bioChips button').forEach(b=>b.classList.toggle('on', S.bio.s.includes(b.dataset.b)));
   $('#ver').textContent='Version '+VERSION;
   renderPush();
 }
@@ -1098,6 +1122,69 @@ function scene(code,isDay){
   for(let i=0;i<clouds;i++){ const near=i%2===1, w=near?130+rnd()*80:70+rnd()*50, dur=near?(storm(name)?14:22)+rnd()*12:(storm(name)?26:42)+rnd()*22;
     h+=`<div class="bgcloud ${near?'near':'far'}" style="top:${(near?30+rnd()*50:4+rnd()*40).toFixed(0)}%;width:${w.toFixed(0)}px;animation-duration:${dur.toFixed(0)}s;animation-delay:-${(rnd()*dur).toFixed(0)}s"><div class="bob" style="animation-duration:${(5+rnd()*4).toFixed(1)}s;animation-delay:-${(rnd()*5).toFixed(1)}s">${cl}</div></div>`; }
   return {name, dark, html:`<div class="sky">${h}</div>`};
+}
+
+/* ================= Biowetter / Wetterfühligkeit ================= */
+// Eigene Abschätzung aus Luftdruck-, Temperatur- und Feuchteverlauf (angelehnt an die Kriterien der Medizin-Meteorologie).
+// Keine Diagnose – nur ein Hinweis, ob das Wetter gerade „umschlägt“.
+const BIO_EFF={kopf:'Kopfschmerzen / Migräne',kreis:'Kreislauf / Blutdruck',gelenk:'Gelenke / Narben',schlaf:'Schlaf / Müdigkeit',laune:'Stimmung / Konzentration'};
+function bioAssess(d){
+  const H=d.hourly, ni=hourIndex(H,d.utc_offset_seconds||0), P=H.pressure_msl, T=H.temperature_2m;
+  const from=Math.max(0,ni-12), to=Math.min(H.time.length-1,ni+24);
+  let pts=0, why=[], eff=new Set(), title='', trend=null;
+  if(P && P[ni]!=null){
+    // stärkste Änderung innerhalb von 12 Std. im Fenster -12 … +24 Std.
+    let best=0, bi=ni, bj=ni;
+    for(let i=from;i<=to;i++) for(let j=i+1;j<=Math.min(to,i+12);j++){ const dv=P[j]-P[i]; if(P[i]!=null&&P[j]!=null&&Math.abs(dv)>Math.abs(best)){ best=dv; bi=i; bj=j; } }
+    const ab=Math.abs(best), when=bj<=ni?'zuletzt':(bi>=ni?'bis '+H.time[bj].slice(11,13)+' Uhr':'gerade');
+    trend={v:best, when};
+    if(ab>=8){ pts+=2; why.push(`Luftdruck ${best<0?'fällt':'steigt'} stark: ${best>0?'+':'−'}${r0(ab)} hPa in ${bj-bi} Std. (${when})`); }
+    else if(ab>=4){ pts+=1; why.push(`Luftdruck ${best<0?'fällt':'steigt'} deutlich: ${best>0?'+':'−'}${r0(ab)} hPa in ${bj-bi} Std. (${when})`); }
+    if(ab>=4){ ['kopf','kreis','schlaf'].forEach(x=>eff.add(x)); if(best<0) eff.add('gelenk'); }
+    const pn=P[ni];
+    if(pn<1000){ pts+=1; why.push(`Tiefdruck (${r0(pn)} hPa)`); eff.add('kopf'); eff.add('gelenk'); eff.add('laune'); }
+    else if(pn>1030){ why.push(`Kräftiges Hoch (${r0(pn)} hPa) – meist ruhig, morgens oft kalt`); eff.add('kreis'); }
+  }
+  // Temperatursprung: heute → morgen (Höchstwerte) und innerhalb der nächsten 24 Std.
+  const D=d.daily, dt=(D.temperature_2m_max[1]??D.temperature_2m_max[0])-D.temperature_2m_max[0];
+  if(Math.abs(dt)>=6){ pts+=2; why.push(`Temperatursprung: morgen ${dt>0?'+':'−'}${r0(Math.abs(dt))} °C`); eff.add('kreis'); eff.add('kopf'); }
+  else if(Math.abs(dt)>=4){ pts+=1; why.push(`Morgen ${dt>0?'wärmer':'kälter'} (${dt>0?'+':'−'}${r0(Math.abs(dt))} °C)`); eff.add('kreis'); }
+  // Schwüle bzw. Kältereiz
+  const dp=(H.dew_point_2m||[]).slice(ni,ni+12).filter(x=>x!=null), dpm=dp.length?Math.max(...dp):null;
+  if(dpm!=null && dpm>=16){ pts+=1; why.push(`Schwül (Taupunkt ${r0(dpm)} °C)`); eff.add('kreis'); eff.add('schlaf'); }
+  const ap=(H.apparent_temperature||[]).slice(ni,ni+12).filter(x=>x!=null), apm=ap.length?Math.min(...ap):null;
+  if(apm!=null && apm<=-8){ pts+=1; why.push(`Starker Kältereiz (gefühlt ${tn(apm)} °C)`); eff.add('kreis'); eff.add('gelenk'); }
+  // Frontdurchgang: Druck fällt + Niederschlag + Böen
+  const gust=Math.max(0,...(H.wind_gusts_10m||[]).slice(ni,ni+12).filter(x=>x!=null)), wet=(H.precipitation||[]).slice(ni,ni+12).some(x=>x>=0.3);
+  if(trend && trend.v<=-4 && wet && gust>=40){ pts+=1; why.push('Wetterfront zieht durch (Druckfall, Regen, Böen)'); }
+  const lvl=pts>=2?2:pts>=1?1:0;
+  title=lvl===2?'Starker Wetterumschwung':lvl===1?'Wetter schlägt um':'Ruhiges Biowetter';
+  if(!why.length) why.push('Luftdruck und Temperatur bleiben recht gleichmäßig');
+  return {lvl,title,why,eff:[...eff],from,to,ni};
+}
+function bioCard(d){
+  const b=bioAssess(d), H=d.hourly, P=H.pressure_msl, mine=S.bio&&S.bio.on?S.bio.s:[];
+  let spark='';
+  if(P && P[b.ni]!=null){
+    const xs=[]; for(let i=b.from;i<=b.to;i++) if(P[i]!=null) xs.push([i,P[i]]);
+    const lo=Math.min(...xs.map(x=>x[1])), hi=Math.max(...xs.map(x=>x[1])), sp=Math.max(6,hi-lo), mid=(lo+hi)/2;
+    const X=i=>((i-b.from)/(b.to-b.from)*296+2).toFixed(1), Y=v=>(32-(v-mid)/sp*48).toFixed(1);
+    const path=xs.map((x,k)=>(k?'L':'M')+X(x[0])+' '+Y(x[1])).join(' ');
+    const col=b.lvl===2?'#e5412d':b.lvl===1?'#ff9a2e':'#5fbf5f';
+    spark=`<svg class="spark" viewBox="0 0 300 64" preserveAspectRatio="none"><path d="${path} L${X(xs[xs.length-1][0])} 64 L${X(xs[0][0])} 64Z" fill="${col}" opacity=".12"/><path d="${path}" fill="none" stroke="${col}" stroke-width="2.5" vector-effect="non-scaling-stroke"/><line x1="${X(b.ni)}" x2="${X(b.ni)}" y1="0" y2="64" stroke="#ff6a00" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/></svg>
+      <div class="sx"><span>−${b.ni-b.from} Std.</span><span style="color:#ff6a00;font-weight:700">jetzt · ${r0(P[b.ni])} hPa</span><span>+${b.to-b.ni} Std.</span></div>`;
+  }
+  let eff='';
+  if(b.lvl>0){
+    const list=b.eff.map(k=>mine.includes(k)?`<b class="me">${BIO_EFF[k]} ← betrifft dich</b>`:BIO_EFF[k]);
+    const hit=b.eff.filter(k=>mine.includes(k));
+    eff=`<div class="eff">Wetterfühlige merken das oft bei: ${list.join(' · ')}</div>
+      <div class="tip">${hit.length?'<b>Für dich:</b> ':''}Viel trinken, an die frische Luft gehen, regelmäßig essen und schlafen${hit.includes('kreis')?', morgens langsam aufstehen':''}${hit.includes('kopf')?', Bildschirmpausen einplanen':''}${hit.includes('gelenk')?', warm halten und in Bewegung bleiben':''}. Bei starken oder ungewohnten Beschwerden ärztlich abklären.</div>`;
+  } else if(mine.length) eff=`<div class="tip">Heute kein deutlicher Wetterumschwung – gute Bedingungen für dich.</div>`;
+  return `<h2>Biowetter · nächste 24 Std.</h2>
+  <div class="card bio" id="bioCard"><div class="bh"><span class="lv l${b.lvl}">${['gering','mittel','stark'][b.lvl]}</span><div class="bt">${b.title}</div></div>
+    <ul>${b.why.map(w=>`<li>${w}</li>`).join('')}</ul>${spark}${eff}
+    <div class="tip" style="font-size:11.5px">Eigene Abschätzung aus Luftdruck, Temperatur und Feuchte – keine medizinische Vorhersage.</div></div>`;
 }
 
 /* ================= Niederschlagsart ================= */
@@ -1409,7 +1496,8 @@ function pushPlaces(){ const L=[]; const g=gpsPlace(); if(S.gpsOn&&g) L.push(g);
   return L.map(p=>({n:p.name, lat:+p.lat.toFixed(3), lon:+p.lon.toFixed(3)})); }
 async function currentSub(){ try{ const r=await navigator.serviceWorker.ready; return await r.pushManager.getSubscription(); }catch(e){ return null; } }
 async function pushCode(){ const sub=await currentSub(); if(!sub) return '';
-  const j=JSON.stringify({v:1,name:S.name||'',prefs:P.prefs,places:pushPlaces(),sub:sub.toJSON()});
+  const o={v:1,name:S.name||'',prefs:P.prefs,places:pushPlaces(),sub:sub.toJSON()}; if(S.bio&&S.bio.on) o.bio={on:true,s:S.bio.s};
+  const j=JSON.stringify(o);
   return btoa(unescape(encodeURIComponent(j))); }
 async function renderPush(){
   const box=$('#pushBox'); if(!box) return;
@@ -1488,7 +1576,7 @@ function demoData(){
   for(let i=0;i<24*16;i++){ const d=new Date(start.getTime()+i*3600e3), h=d.getHours(), day=Math.floor(i/24);
     H.time.push(iso(d)); H.temperature_2m.push(+(6+day%3+5*Math.sin((h-9)/24*2*Math.PI)).toFixed(1));
     const wet=(day===1&&h>13&&h<20)||(day===4&&h>8&&h<16); H.precipitation_probability.push(wet?75:(h>14&&h<17?25:5)); H.precipitation.push(wet?1.2:0);
-    H.weather_code.push(wet?63:(h>11&&h<16?2:(h<8&&day===0?45:1))); H.is_day.push(h>=7&&h<17?1:0); H.wind_speed_10m.push(12); }
+    H.weather_code.push(wet?63:(h>11&&h<16?2:(h<8&&day===0?45:1))); H.is_day.push(h>=7&&h<17?1:0); H.wind_speed_10m.push(12); (H.pressure_msl=H.pressure_msl||[]).push(+(1012-9*Math.tanh((day*24+h-30)/6)).toFixed(1)); }
   const M={time:[],precipitation:[]};
   for(let i=0;i<14;i++){ const d=new Date(Math.floor(now/900e3)*900e3+(i-1)*900e3); M.time.push(iso(d)); M.precipitation.push(i>4&&i<8?[0.3,0.8,0.5][i-5]:0); }
   const D={time:[],weather_code:[],temperature_2m_max:[],temperature_2m_min:[],sunrise:[],sunset:[],uv_index_max:[],precipitation_sum:[],precipitation_probability_max:[],wind_speed_10m_max:[],wind_gusts_10m_max:[]};
@@ -1534,6 +1622,8 @@ $('#favEdit').onclick=()=>{ S.favEditing=!S.favEditing; renderOrte(true); };
 $('#nameSave').onclick=()=>{ setName($('#nameFld').value); $('#nameFld').blur(); };
 $('#nameFld').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#nameSave').click(); });
 $('#swFx').onclick=()=>{ S.fx=!S.fx; LS.set('fx',S.fx); renderOrte(true); FX.kick(); };
+$('#swBio').onclick=()=>{ S.bio.on=!S.bio.on; LS.set('bio',S.bio); renderOrte(true); if(S.wx) renderExtra(); if(P.on) toast('Wetterfühligkeit geändert – Push-Code neu kopieren'); };
+document.querySelectorAll('#bioChips button').forEach(b=>b.onclick=()=>{ const k=b.dataset.b, a=S.bio.s; const i=a.indexOf(k); if(i<0) a.push(k); else a.splice(i,1); LS.set('bio',S.bio); renderOrte(true); if(S.wx) renderExtra(); if(P.on&&S.bio.on) toast('Push-Code neu kopieren'); });
 document.querySelectorAll('#fxTry button').forEach(b=>b.onclick=()=>{ if(!S.fx){ S.fx=true; LS.set('fx',true); } switchView('wetter'); FX.demo(b.dataset.fx); toast(b.textContent+' – Vorschau für 10 Sekunden'); });
 $('#swLast').onclick=()=>{ S.startLast=!S.startLast; LS.set('startLast',S.startLast); renderOrte(); };
 addEventListener('scroll',()=>$('#top').classList.toggle('scrolled',scrollY>4),{passive:true});
