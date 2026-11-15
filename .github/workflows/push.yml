@@ -1,0 +1,61 @@
+name: Push-Nachrichten
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'Probe-Nachricht an alle senden'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: push
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Letzten Stand laden (damit nichts doppelt kommt)
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: push-state-${{ github.run_id }}
+          restore-keys: push-state-
+      - name: Wetter prüfen und Nachrichten senden
+        run: node push.mjs
+        env:
+          TEST_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.test }}
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          PUSH_1: ${{ secrets.PUSH_1 }}
+          PUSH_2: ${{ secrets.PUSH_2 }}
+          PUSH_3: ${{ secrets.PUSH_3 }}
+          PUSH_4: ${{ secrets.PUSH_4 }}
+          PUSH_5: ${{ secrets.PUSH_5 }}
+          PUSH_6: ${{ secrets.PUSH_6 }}
+      - name: Stand speichern
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: push-state-${{ github.run_id }}
+      - name: Monatlich ein Lebenszeichen (GitHub schaltet geplante Aufträge sonst nach 60 Tagen ohne Aktivität ab)
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(date -u +%d)" = "01" ] && [ "$(date -u +%H)" = "03" ] && [ "$(date -u +%M)" -lt 15 ]; then
+            date -u > .lebenszeichen
+            git config user.name "TB Wetter"
+            git config user.email "tb-wetter@users.noreply.github.com"
+            git add .lebenszeichen && git commit -m "Lebenszeichen" && git push
+          fi
