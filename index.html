@@ -253,6 +253,12 @@ h2:has(> span)::before{display:none}
 .ol small{flex-basis:100%;font-family:var(--cond);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:700}
 .oc{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:20px;background:var(--steel);border:1px solid var(--line);font-size:14.5px;font-weight:500}
 .oc i{font-style:normal;font-size:17px;line-height:1}
+/* Push */
+#pushMore{display:none}#pushBox.on #pushMore{display:block}
+.mtsel{font:inherit;font-family:var(--cond);font-weight:700;font-size:20px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--steel);color:var(--white)}
+#pushCode{width:100%;margin:8px 0 10px;font:12px/1.35 ui-monospace,Menlo,monospace;color:var(--grey2);background:var(--steel);border:1px solid var(--line);border-radius:10px;padding:8px;resize:none;word-break:break-all}
+.pcinfo{display:block;color:var(--grey);font-size:13px;margin-top:2px;line-height:1.35}
+.pcinfo.chg{color:#c25400;font-weight:600}
 /* Regen-Übersicht */
 .rplist{padding:4px 14px}
 .rp{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -442,6 +448,24 @@ body.th-photo .bgpanel{background:#fff}
       <div class="set" style="padding-top:0"><div><small style="margin:0">Ausprobieren (10 Sekunden):</small></div></div>
       <div class="chips" id="fxTry"><button data-fx="rain">Regen</button><button data-fx="snow">Schnee</button><button data-fx="thunder">Gewitter</button><button data-fx="wind">Wind</button><button data-fx="fog">Nebel</button><button data-fx="ice">Glätte</button></div>
     </div>
+    <h2>Push-Nachrichten</h2>
+    <div class="card" id="pushBox">
+      <div class="set"><div>Push-Nachrichten<small id="pushHint">Warnungen und Hinweise aufs iPhone und die Apple Watch – auch wenn die App geschlossen ist.</small></div><button class="sw" id="swPush" role="switch" aria-label="Push-Nachrichten"></button></div>
+      <div id="pushMore">
+        <div class="sep"></div>
+        <div class="set"><div>Amtliche Warnungen<small>DWD-Warnungen für deine Orte. Nachts (22–6 Uhr) nur Unwetter.</small></div><button class="sw" data-pp="warn" role="switch" aria-label="Amtliche Warnungen"></button></div>
+        <div class="set"><div>Niederschlag in der nächsten Stunde<small>Regen, Schnee, Schneeregen – für den ersten Ort, 6–22 Uhr, höchstens alle 3 Std.</small></div><button class="sw" data-pp="rain" role="switch" aria-label="Niederschlag"></button></div>
+        <div class="set"><div>Morgen-Hinweis<small>Temperatur, Niederschlag, Glätte und was du anziehen solltest.</small></div><button class="sw" data-pp="morning" role="switch" aria-label="Morgen-Hinweis"></button></div>
+        <div class="set" id="mtRow" style="padding-top:0"><div>Uhrzeit<small>In 15-Minuten-Schritten; kann ein paar Minuten später ankommen.</small></div><select id="mtSel" class="mtsel" aria-label="Uhrzeit Morgen-Hinweis"></select></div>
+        <div class="sep"></div>
+        <div style="padding:14px">
+          <div style="font-weight:600">Dein Push-Code</div>
+          <small class="pcinfo" id="pushCodeInfo">Diesen Code einmal in GitHub eintragen (Anleitung im Chat). Ändern sich Orte oder Schalter, Code neu kopieren.</small>
+          <textarea id="pushCode" readonly rows="3"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="pushCopy" style="margin:0">Code kopieren</button><button class="btn ghost" id="pushTest" style="margin:0">Probe-Nachricht</button></div>
+        </div>
+      </div>
+    </div>
     <p class="muted" style="text-align:center">TB Wetter · <span id="ver"></span><br>Privates Projekt im Tuning-Bus-Stil.</p>
   </section>
 </div>
@@ -479,7 +503,7 @@ body.th-photo .bgpanel{background:#fff}
 
 <script>
 'use strict';
-const VERSION = '1.9';
+const VERSION = '2.0';
 const DEMO_MODE = false; // nur für die Vorschau im Chat auf true
 const $ = s => document.querySelector(s);
 const LS = {
@@ -650,11 +674,12 @@ function renderNow(){
     const seg=M.precipitation.slice(mi,mi+8).map(v=>v||0), segT=M.time.slice(mi,mi+8);
     if(seg.length>=4){
       const wet=seg.findIndex(v=>v>=0.1), mx=Math.max(0.5,...seg);
+      const Hh=d.hourly, wi=wet>=0?Hh.time.findIndex(t=>t.slice(0,13)===segT[wet].slice(0,13)):-1, K=wi>=0?pKind(Hh.weather_code[wi],Hh.temperature_2m[wi]):pKind(c.weather_code,c.temperature_2m);
       let msg;
-      if(wet===-1) msg='<b>Trocken</b> in den nächsten 2 Stunden';
-      else if(wet===0){ const dry=seg.findIndex(v=>v<0.1); msg=dry===-1?'<b>Regen</b> hält die nächsten 2 Stunden an':`<b>Regen</b> – hört voraussichtlich gegen ${hm(segT[dry])} Uhr auf`; }
-      else msg=`<b>Regen ab ca. ${hm(segT[wet])} Uhr</b>`;
-      rain=`<div class="rainline"><div class="rl">${icon(wet===-1?(c.is_day?2:0):61,c.is_day)}<span>${msg}</span></div><div class="rbar">${seg.map(v=>`<i class="${v<0.1?'z':''}" style="height:${v<0.1?8:Math.max(18,Math.min(100,v/mx*100))}%"></i>`).join('')}</div><div class="rtimes"><span>Jetzt</span><span>+1 Std.</span><span>+2 Std.</span></div></div>`;
+      if(wet===-1) msg='<b>Kein Niederschlag</b> in den nächsten 2 Stunden';
+      else if(wet===0){ const dry=seg.findIndex(v=>v<0.1); msg=dry===-1?`<b>${K.w}</b> hält die nächsten 2 Stunden an`:`<b>${K.w}</b> – hört voraussichtlich gegen ${hm(segT[dry])} Uhr auf`; }
+      else msg=`<b>${K.w} ab ca. ${hm(segT[wet])} Uhr</b>`;
+      rain=`<div class="rainline"><div class="rl">${icon(wet===-1?(c.is_day?2:0):K.ic,c.is_day)}<span>${msg}</span></div><div class="rbar">${seg.map(v=>`<i class="${v<0.1?'z':''}" style="height:${v<0.1?8:Math.max(18,Math.min(100,v/mx*100))}%"></i>`).join('')}</div><div class="rtimes"><span>Jetzt</span><span>+1 Std.</span><span>+2 Std.</span></div></div>`;
     }
   }
   const ice=iceRisk(d); FX.fromWeather(c, stale?0:Math.max(ice.level, warnIsIce()?1:0)); renderGreet();
@@ -872,6 +897,7 @@ function renderOrte(noFetch){
   if(document.activeElement!==$('#nameFld')) $('#nameFld').value=S.name;
   $('#swFx').classList.toggle('on', S.fx); $('#swFx').setAttribute('aria-checked', S.fx);
   $('#ver').textContent='Version '+VERSION;
+  renderPush();
 }
 function tempFor(p){ const n=S.favNow?.[pid(p)]; if(n) return `<span style="display:inline-flex;align-items:center;gap:4px"><svg viewBox="0 0 64 64" width="26" height="26">${iconG(n.c,n.d)}</svg>${deg(n.t)}</span>`; const c=LS.get('wx_'+pid(p),null); return c&&c.data?.current? deg(c.data.current.temperature_2m):''; }
 async function loadFavNow(){
@@ -1056,6 +1082,25 @@ function scene(code,isDay){
   return {name, dark, html:`<div class="sky">${h}</div>`};
 }
 
+/* ================= Niederschlagsart ================= */
+function pKind(code,t){
+  if([95,96,99].includes(code)) return {w:'Gewitter',ic:95,r:4};
+  if([56,57,66,67].includes(code)) return {w:'Gefrierender Regen',ic:66,r:3};
+  if(SNOWC.includes(code)) return {w:'Schnee',ic:73,r:2};
+  if(t!=null && t<=1 && t>-1 && WETC.includes(code)) return {w:'Schneeregen',ic:66,r:2.5};
+  return {w:'Regen',ic:61,r:1};
+}
+function kindOver(H,from,to){ // vorherrschende bzw. wichtigste Art im Zeitraum
+  const ks=[]; for(let i=from;i<=to;i++){ const p=H.precipitation_probability?.[i]??0, mm=H.precipitation?.[i]??0; if(p>=30||mm>=0.1||H.weather_code[i]>=51) ks.push(pKind(H.weather_code[i],H.temperature_2m[i])); }
+  if(!ks.length) return pKind(61);
+  if(ks.some(k=>k.r===4)) return ks.find(k=>k.r===4);
+  if(ks.some(k=>k.r===3)) return ks.find(k=>k.r===3);
+  const sn=ks.filter(k=>k.w==='Schnee').length, rn=ks.filter(k=>k.w==='Regen').length, sl=ks.filter(k=>k.w==='Schneeregen').length;
+  if(sn && (rn||sl)) return {w:'Schneeregen',ic:66,r:2.5};
+  if(sn) return ks.find(k=>k.w==='Schnee'); if(sl) return ks.find(k=>k.w==='Schneeregen');
+  return pKind(61);
+}
+
 /* ================= Regen-Übersicht 48 Std. ================= */
 function rainPlan(d){
   const H=d.hourly, ni=hourIndex(H,d.utc_offset_seconds||0), end=Math.min(H.time.length, ni+48);
@@ -1079,25 +1124,25 @@ function rainPlan(d){
     const seg=M.precipitation.slice(mi,mi+8), tt=M.time.slice(mi,mi+9);
     const f=seg.findIndex(v=>v>=0.1); let l=-1; seg.forEach((v,i)=>{ if(v>=0.1) l=i; });
     const coveredByHour = f>=0 && per.length && per[0].s<=ni+1;
-    if(f>=0 && !coveredByHour){ const mm=seg.slice(f,l+1).reduce((a,b)=>a+(b||0),0);
-      now=`<div class="rp"><span class="rpic">${icon(61,1)}</span><div><b>Heute ${hm(tt[f])}–${hm(tt[l+1]||tt[l])} Uhr</b><small>Kurzer Schauer laut 15-Min.-Prognose${mm>=0.1?' · ca. '+fmt1(mm)+' mm':''}</small></div><span class="rpp kf">bald</span></div>`; }
+    if(f>=0 && !coveredByHour){ const mm=seg.slice(f,l+1).reduce((a,b)=>a+(b||0),0); const hi=H.time.findIndex(t=>t.slice(0,13)===tt[f].slice(0,13)); const nk=hi>=0?pKind(H.weather_code[hi],H.temperature_2m[hi]):pKind(61);
+      now=`<div class="rp"><span class="rpic">${icon(nk.ic,1)}</span><div><b>Heute ${hm(tt[f])}–${hm(tt[l+1]||tt[l])} Uhr</b><small>${nk.w}, kurz – laut 15-Min.-Prognose${mm>=0.1?' · ca. '+fmt1(mm)+' mm':''}</small></div><span class="rpp kf">bald</span></div>`; }
   }
   const P=pal(), dayName=t=>{ const ds=t.slice(0,10), td=localNow(d.utc_offset_seconds||0).slice(0,10); const dd=Math.round((dayDate(ds)-dayDate(td))/864e5); return dd===0?'Heute':dd===1?'Morgen':WDL[dayDate(ds).getDay()]; };
   let body;
   if(!per.length && !now){
-    body=`<div class="rp none">${icon(0,1)}<div><b>Kein Regen in Sicht</b><small>Die nächsten 48 Stunden höchstens ${maxAll} % Regenrisiko</small></div></div>`;
+    body=`<div class="rp none">${icon(0,1)}<div><b>Kein Niederschlag in Sicht</b><small>Die nächsten 48 Stunden höchstens ${maxAll} % Risiko</small></div></div>`;
   } else {
     body=per.slice(0,6).map(r=>{
       const st=H.time[r.s], en=H.time[Math.min(r.e+1,H.time.length-1)];
       const d1=dayName(st), d2=dayName(en), h1=+st.slice(11,13), h2=+en.slice(11,13);
       const when= d1===d2 ? `${d1} ${h1}–${h2} Uhr` : `${d1} ${h1} Uhr – ${d2} ${h2} Uhr`;
       const word=r.p>=70?'sehr wahrscheinlich':r.p>=50?'wahrscheinlich':'möglich';
-      const snow=r.snow>r.rain;
-      return `<div class="rp"><span class="rpic">${icon(snow?73:(r.p>=70?63:61),1)}</span><div><b>${when}</b><small>${snow?'Schnee':'Regen'} ${word}${r.mm>=0.1?' · ca. '+fmt1(r.mm)+' mm':''}</small></div><span class="rpp" style="--pp:${r.p}%">${r.p} %</span></div>`;
+      const K=kindOver(H,r.s,r.e);
+      return `<div class="rp"><span class="rpic">${icon(K.ic===61&&r.p>=70?63:K.ic,1)}</span><div><b>${when}</b><small>${K.w} ${word}${r.mm>=0.1?' · ca. '+fmt1(r.mm)+(K.w==='Schnee'?' mm (Wasser)':' mm'):''}</small></div><span class="rpp" style="--pp:${r.p}%">${r.p} %</span></div>`;
     }).join('');
   }
   body=now+(per.length||!now?body:'');
-  return `<h2>Regen · nächste 48 Std.</h2><div class="card rplist">${body}</div>`;
+  return `<h2>Niederschlag · nächste 48 Std.</h2><div class="card rplist">${body}</div>`;
 }
 
 /* ================= Glätte ================= */
@@ -1336,6 +1381,45 @@ function demoWarn(){ const n=new Date(), e=new Date(n.getTime()+8*3600e3);
   return [{status:'actual',severity:'minor',event_de:'FROST',headline_de:'Amtliche WARNUNG vor FROST',onset:n.toISOString(),expires:e.toISOString(),
     description_de:'Es tritt leichter Frost zwischen -1 °C und -4 °C auf. In Bodennähe wird Frost bis -6 °C erwartet.',instruction_de:'Frostempfindliche Pflanzen abdecken, auf mögliche Glätte achten.'}]; }
 
+/* ================= Push-Nachrichten ================= */
+const VAPID_PUBLIC='BMS27UL8w9YXDiFe5HwtBd_REt6FdloSoKeJLwA-ZmmioEoySDPBEWOO3IwlfbVew3flgSsxHwkY6FyoUnf_eMM';
+const P={ on:LS.get('pushOn',false), prefs:Object.assign({warn:true,rain:false,morning:true,mt:'06:00'},LS.get('pushPrefs',{})), lastCode:LS.get('pushLastCode','') };
+const pushSupport=()=> 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const standalone=()=> (navigator.standalone===true) || matchMedia('(display-mode: standalone)').matches;
+function b64uToU8(s){ const p='='.repeat((4-s.length%4)%4), b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(b,c=>c.charCodeAt(0)); }
+function pushPlaces(){ const L=[]; const g=gpsPlace(); if(S.gpsOn&&g) L.push(g); for(const f of S.favs){ if(L.length>=3) break; if(!L.some(x=>sameP(x,f))) L.push(f); }
+  return L.map(p=>({n:p.name, lat:+p.lat.toFixed(3), lon:+p.lon.toFixed(3)})); }
+async function currentSub(){ try{ const r=await navigator.serviceWorker.ready; return await r.pushManager.getSubscription(); }catch(e){ return null; } }
+async function pushCode(){ const sub=await currentSub(); if(!sub) return '';
+  const j=JSON.stringify({v:1,name:S.name||'',prefs:P.prefs,places:pushPlaces(),sub:sub.toJSON()});
+  return btoa(unescape(encodeURIComponent(j))); }
+async function renderPush(){
+  const box=$('#pushBox'); if(!box) return;
+  const hint=$('#pushHint');
+  if(!pushSupport()){ hint.textContent='Auf diesem Gerät nicht möglich. Nötig: iPhone mit iOS 16.4 oder neuer und die App vom Home-Bildschirm.'; $('#swPush').disabled=true; return; }
+  if(!standalone()) hint.textContent='Nur in der App vom Home-Bildschirm möglich (nicht im Browser).';
+  $('#swPush').classList.toggle('on',P.on); box.classList.toggle('on',P.on);
+  document.querySelectorAll('[data-pp]').forEach(b=>b.classList.toggle('on',!!P.prefs[b.dataset.pp]));
+  const sel=$('#mtSel'); if(!sel.options.length){ for(let m=0;m<24*60;m+=15){ const v=pad(Math.floor(m/60))+':'+pad(m%60); sel.add(new Option(v+' Uhr',v)); } }
+  sel.value=P.prefs.mt; $('#mtRow').style.display=P.prefs.morning?'flex':'none';
+  if(P.on){ const code=await pushCode(); $('#pushCode').value=code||'(Abo fehlt – Schalter aus und wieder ein)';
+    const chg=code && P.lastCode && code!==P.lastCode; const info=$('#pushCodeInfo'); info.classList.toggle('chg',!!chg);
+    info.textContent=chg?'Code hat sich geändert (Orte oder Schalter) – bitte neu kopieren und in GitHub ersetzen.':'Diesen Code einmal in GitHub eintragen (Anleitung im Chat). Ändern sich Orte oder Schalter, Code neu kopieren.'; }
+}
+async function pushOn(){
+  try{
+    if(!pushSupport()){ toast('Push wird hier nicht unterstützt'); return; }
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){ toast('Mitteilungen nicht erlaubt – in iOS-Einstellungen → Mitteilungen → TB Wetter freigeben'); return; }
+    const r=await navigator.serviceWorker.ready;
+    let sub=await r.pushManager.getSubscription();
+    if(!sub) sub=await r.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64uToU8(VAPID_PUBLIC)});
+    P.on=true; LS.set('pushOn',true); toast('Push aktiv – jetzt Code kopieren'); renderPush();
+  }catch(e){ toast('Push konnte nicht aktiviert werden: '+(e.message||e)); }
+}
+async function pushOff(){ try{ const sub=await currentSub(); if(sub) await sub.unsubscribe(); }catch(e){}
+  P.on=false; LS.set('pushOn',false); toast('Push aus – der Code in GitHub ist damit wirkungslos'); renderPush(); }
+
 /* ================= Hintergrund ================= */
 function applyTheme(){
   let th=S.theme; const photo=LS.get('bgphoto',null);
@@ -1410,6 +1494,12 @@ function demoGeo(q){ const all=[{name:'Erfurt',admin1:'Thüringen',country_code:
 /* ================= Start ================= */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 $('#warnClose').onclick=()=>$('#warnSheet').classList.remove('open'); $('#warnSheet').onclick=e=>{ if(e.target.id==='warnSheet') $('#warnSheet').classList.remove('open'); };
+$('#swPush').onclick=()=>{ P.on?pushOff():pushOn(); };
+document.querySelectorAll('[data-pp]').forEach(b=>b.onclick=()=>{ P.prefs[b.dataset.pp]=!P.prefs[b.dataset.pp]; LS.set('pushPrefs',P.prefs); renderPush(); });
+$('#mtSel').onchange=e=>{ P.prefs.mt=e.target.value; LS.set('pushPrefs',P.prefs); renderPush(); toast('Morgen-Hinweis um '+e.target.value+' Uhr – Code neu kopieren'); };
+$('#pushCopy').onclick=async()=>{ const c=$('#pushCode').value; try{ await navigator.clipboard.writeText(c); }catch(e){ const t=$('#pushCode'); t.focus(); t.select(); document.execCommand&&document.execCommand('copy'); }
+  P.lastCode=c; LS.set('pushLastCode',c); renderPush(); toast('Code kopiert – jetzt in GitHub einfügen'); };
+$('#pushTest').onclick=async()=>{ try{ const r=await navigator.serviceWorker.ready; await r.showNotification('TB Wetter',{body:'So sieht eine Push-Nachricht aus'+(S.name?', '+S.name:'')+'.',icon:'icon-192.png',badge:'icon-192.png',tag:'probe'}); }catch(e){ toast('Probe nicht möglich: '+(e.message||e)); } };
 $('#bgBtn').onclick=openBg; $('#bgSet').onclick=openBg; $('#bgClose').onclick=closeBg; $('#bgSheet').onclick=e=>{ if(e.target.id==='bgSheet') closeBg(); };
 document.querySelectorAll('.bgopts button').forEach(b=>b.onclick=()=>{ const t=b.dataset.th; if(t==='photo' && !LS.get('bgphoto',null)){ S.theme='photo'; applyTheme(); $('#photoFile').click(); return; } setTheme(t); });
 $('#photoPick').onclick=()=>$('#photoFile').click();
@@ -1436,6 +1526,8 @@ addEventListener('online',()=>{ toast('Wieder online – aktualisiere'); load(tr
 let y0=null; addEventListener('touchstart',e=>{ y0=(S.view==='wetter'&&scrollY<=0)?e.touches[0].clientY:null; },{passive:true});
 addEventListener('touchend',e=>{ if(y0!==null&&e.changedTouches[0].clientY-y0>120){ toast('Aktualisiere …'); load(true);} y0=null; });
 
+if(location.hash==='#radar') setTimeout(()=>switchView('radar'),300);
+if('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message',e=>{ if(e.data&&e.data.open) switchView(e.data.open); });
 (async function start(){
   // Startort: zuletzt angesehen (wenn eingestellt), sonst erster Favorit, sonst Erfurt
   const last=LS.get('last',null);
