@@ -181,6 +181,8 @@ h2:has(> span)::before{display:none}
 .set{display:flex;align-items:center;gap:12px;padding:14px}
 .set div{flex:1}
 .set small{display:block;color:var(--grey);font-size:13px;margin-top:2px;line-height:1.35}
+.ast{color:var(--orange,#ff6a00);font-weight:700;margin-left:2px}
+.pnote{margin-top:12px;padding:10px 12px;border-left:3px solid var(--orange,#ff6a00);background:rgba(255,106,0,.08);border-radius:8px;font-size:13px;line-height:1.45;color:inherit}
 .sw{width:52px;height:32px;border-radius:16px;background:var(--steel);border:1px solid var(--line);position:relative;flex:none;transition:.2s}
 .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.2s}
 .sw.on{background:var(--orange);border-color:var(--orange)}
@@ -453,16 +455,17 @@ body.th-photo .bgpanel{background:#fff}
       <div class="set"><div>Push-Nachrichten<small id="pushHint">Warnungen und Hinweise aufs iPhone und die Apple Watch – auch wenn die App geschlossen ist.</small></div><button class="sw" id="swPush" role="switch" aria-label="Push-Nachrichten"></button></div>
       <div id="pushMore">
         <div class="sep"></div>
-        <div class="set"><div>Amtliche Warnungen<small>DWD-Warnungen für deine Orte. Nachts (22–6 Uhr) nur Unwetter.</small></div><button class="sw" data-pp="warn" role="switch" aria-label="Amtliche Warnungen"></button></div>
-        <div class="set"><div>Niederschlag in der nächsten Stunde<small>Regen, Schnee, Schneeregen – für den ersten Ort, 6–22 Uhr, höchstens alle 3 Std.</small></div><button class="sw" data-pp="rain" role="switch" aria-label="Niederschlag"></button></div>
-        <div class="set"><div>Morgen-Hinweis<small>Temperatur, Niederschlag, Glätte und was du anziehen solltest.</small></div><button class="sw" data-pp="morning" role="switch" aria-label="Morgen-Hinweis"></button></div>
-        <div class="set" id="mtRow" style="padding-top:0"><div>Uhrzeit<small>In 15-Minuten-Schritten; kann ein paar Minuten später ankommen.</small></div><select id="mtSel" class="mtsel" aria-label="Uhrzeit Morgen-Hinweis"></select></div>
+        <div class="set"><div>Amtliche Warnungen<span class="ast">*</span><small>DWD-Warnungen für deine Orte. Nachts (22–6 Uhr) nur Unwetter.</small></div><button class="sw" data-pp="warn" role="switch" aria-label="Amtliche Warnungen"></button></div>
+        <div class="set"><div>Niederschlag in der nächsten Stunde<span class="ast">*</span><small>Regen, Schnee, Schneeregen – für den ersten Ort, 6–22 Uhr, höchstens alle 3 Std.</small></div><button class="sw" data-pp="rain" role="switch" aria-label="Niederschlag"></button></div>
+        <div class="set"><div>Morgen-Hinweis<span class="ast">*</span><small>Temperatur, Niederschlag, Glätte und was du anziehen solltest.</small></div><button class="sw" data-pp="morning" role="switch" aria-label="Morgen-Hinweis"></button></div>
+        <div class="set" id="mtRow" style="padding-top:0"><div>Uhrzeit<span class="ast">*</span><small>In 15-Minuten-Schritten; kann ein paar Minuten später ankommen.</small></div><select id="mtSel" class="mtsel" aria-label="Uhrzeit Morgen-Hinweis"></select></div>
         <div class="sep"></div>
         <div style="padding:14px">
           <div style="font-weight:600">Dein Push-Code</div>
           <small class="pcinfo" id="pushCodeInfo">Diesen Code einmal in GitHub eintragen (Anleitung im Chat). Ändern sich Orte oder Schalter, Code neu kopieren.</small>
           <textarea id="pushCode" readonly rows="3"></textarea>
           <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="pushCopy" style="margin:0">Code kopieren</button><button class="btn ghost" id="pushTest" style="margin:0">Probe-Nachricht</button></div>
+          <div class="pnote"><b><span class="ast">*</span> Nicht vergessen:</b> Änderungen an Uhrzeit, Schaltern, Orten oder Namen gelten erst, wenn du den Code neu kopierst und in GitHub ersetzt – bei <b>PUSH_1</b> (Danny) bzw. <b>PUSH_2</b> (Sabine), Stift ✏️ → einsetzen → „Update secret“.<br>Der Hauptschalter oben wirkt dagegen sofort. Wird er wieder eingeschaltet, entsteht ein neuer Code – den einmal in GitHub ersetzen.</div>
         </div>
       </div>
     </div>
@@ -503,7 +506,7 @@ body.th-photo .bgpanel{background:#fff}
 
 <script>
 'use strict';
-const VERSION = '2.0';
+const VERSION = '2.0.1';
 const DEMO_MODE = false; // nur für die Vorschau im Chat auf true
 const $ = s => document.querySelector(s);
 const LS = {
